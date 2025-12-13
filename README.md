@@ -90,13 +90,13 @@ cat > ~/.config/chromium/NativeMessagingHosts/gpgmejson.json << 'EOF'
   "path": "/usr/bin/gpgme-json",
   "type": "stdio",
   "allowed_origins": [
-    "chrome-extension://afaoooloeghgffoacafdcomoooejfgcf/"
+    "chrome-extension://ckgehekhpgcaaikpadklkkjgdgoebdnh/"
   ]
 }
 EOF
 ```
 
-> **Note:** The extension ID `afaoooloeghgffoacafdcomoooejfgcf` is stable due to the `key` field in the manifest. If you modify the extension key, update the `allowed_origins` accordingly.
+> **Note:** The extension ID `ckgehekhpgcaaikpadklkkjgdgoebdnh` is the Chrome Web Store production ID. If you're loading an unpacked extension for development, you'll need to find its ID from `chrome://extensions` and add it to the `allowed_origins` array.
 
 #### Firefox
 
