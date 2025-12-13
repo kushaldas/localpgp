@@ -40,7 +40,7 @@ const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement;
 const alwaysTrust = document.getElementById('alwaysTrust') as HTMLInputElement;
 const armorOutput = document.getElementById('armorOutput') as HTMLInputElement;
 const saveSettingsBtn = document.getElementById('saveSettingsBtn') as HTMLButtonElement;
-const openDemoBtn = document.getElementById('openDemoBtn') as HTMLButtonElement;
+
 const originsList = document.getElementById('originsList') as HTMLUListElement;
 const newOriginInput = document.getElementById('newOrigin') as HTMLInputElement;
 const addOriginBtn = document.getElementById('addOriginBtn') as HTMLButtonElement;
@@ -91,22 +91,75 @@ function createKeyItem(key: Key): HTMLDivElement {
   const name = userId?.name || userId?.userId || 'Unknown';
   const email = userId?.email || '';
   
-  item.innerHTML = `
-    <div class="key-info">
-      <div class="key-badges">
-        ${key.hasSecret ? '<span class="badge secret">Secret Key</span>' : ''}
-        ${key.expired ? '<span class="badge expired">Expired</span>' : ''}
-        ${key.revoked ? '<span class="badge revoked">Revoked</span>' : ''}
-      </div>
-      <div class="key-name">${escapeHtml(name)}</div>
-      ${email ? `<div class="key-email">${escapeHtml(email)}</div>` : ''}
-      <div class="key-fingerprint">${formatFingerprint(key.fingerprint)}</div>
-    </div>
-    <div class="key-actions">
-      <button class="export-btn" data-fingerprint="${key.fingerprint}">Export</button>
-      <button class="danger delete-btn" data-fingerprint="${key.fingerprint}" ${key.hasSecret ? 'data-has-secret="true"' : ''}>Delete</button>
-    </div>
-  `;
+  // Key info section
+  const keyInfo = document.createElement('div');
+  keyInfo.className = 'key-info';
+  
+  // Badges
+  const badges = document.createElement('div');
+  badges.className = 'key-badges';
+  if (key.hasSecret) {
+    const badge = document.createElement('span');
+    badge.className = 'badge secret';
+    badge.textContent = 'Secret Key';
+    badges.appendChild(badge);
+  }
+  if (key.expired) {
+    const badge = document.createElement('span');
+    badge.className = 'badge expired';
+    badge.textContent = 'Expired';
+    badges.appendChild(badge);
+  }
+  if (key.revoked) {
+    const badge = document.createElement('span');
+    badge.className = 'badge revoked';
+    badge.textContent = 'Revoked';
+    badges.appendChild(badge);
+  }
+  keyInfo.appendChild(badges);
+  
+  // Name
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'key-name';
+  nameDiv.textContent = name;
+  keyInfo.appendChild(nameDiv);
+  
+  // Email
+  if (email) {
+    const emailDiv = document.createElement('div');
+    emailDiv.className = 'key-email';
+    emailDiv.textContent = email;
+    keyInfo.appendChild(emailDiv);
+  }
+  
+  // Fingerprint
+  const fpDiv = document.createElement('div');
+  fpDiv.className = 'key-fingerprint';
+  fpDiv.textContent = formatFingerprint(key.fingerprint);
+  keyInfo.appendChild(fpDiv);
+  
+  item.appendChild(keyInfo);
+  
+  // Actions section
+  const actions = document.createElement('div');
+  actions.className = 'key-actions';
+  
+  const exportBtn = document.createElement('button');
+  exportBtn.className = 'export-btn';
+  exportBtn.dataset.fingerprint = key.fingerprint;
+  exportBtn.textContent = 'Export';
+  actions.appendChild(exportBtn);
+  
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'danger delete-btn';
+  deleteBtn.dataset.fingerprint = key.fingerprint;
+  if (key.hasSecret) {
+    deleteBtn.dataset.hasSecret = 'true';
+  }
+  deleteBtn.textContent = 'Delete';
+  actions.appendChild(deleteBtn);
+  
+  item.appendChild(actions);
   
   return item;
 }
@@ -310,10 +363,7 @@ saveSettingsBtn.addEventListener('click', async () => {
   showAlert('Settings saved!', 'success');
 });
 
-// Open demo page handler
-openDemoBtn.addEventListener('click', () => {
-  browser.tabs.create({ url: browser.runtime.getURL('demo.html') });
-});
+
 
 // Load settings
 async function loadSettings(): Promise<void> {
@@ -329,26 +379,37 @@ async function loadOrigins(): Promise<void> {
   const result = await browser.storage.local.get(['allowedOrigins']);
   const origins: string[] = (result.allowedOrigins as string[]) || [];
   
+  // Clear existing content
+  originsList.textContent = '';
+  
   if (origins.length === 0) {
-    originsList.innerHTML = '<li style="color: #999;">No custom origins added</li>';
+    const emptyLi = document.createElement('li');
+    emptyLi.style.color = '#999';
+    emptyLi.textContent = 'No custom origins added';
+    originsList.appendChild(emptyLi);
     return;
   }
   
-  originsList.innerHTML = origins.map(origin => `
-    <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
-      <span style="font-family: monospace; font-size: 13px;">${origin}</span>
-      <button class="remove-origin" data-origin="${origin}" style="padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Remove</button>
-    </li>
-  `).join('');
-  
-  // Add click handlers for remove buttons
-  originsList.querySelectorAll('.remove-origin').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const origin = (e.target as HTMLButtonElement).dataset.origin;
-      if (origin) {
-        await removeOrigin(origin);
-      }
+  origins.forEach(origin => {
+    const li = document.createElement('li');
+    li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0;';
+    
+    const span = document.createElement('span');
+    span.style.cssText = 'font-family: monospace; font-size: 13px;';
+    span.textContent = origin;
+    li.appendChild(span);
+    
+    const btn = document.createElement('button');
+    btn.className = 'remove-origin';
+    btn.dataset.origin = origin;
+    btn.style.cssText = 'padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+    btn.textContent = 'Remove';
+    btn.addEventListener('click', async () => {
+      await removeOrigin(origin);
     });
+    li.appendChild(btn);
+    
+    originsList.appendChild(li);
   });
 }
 

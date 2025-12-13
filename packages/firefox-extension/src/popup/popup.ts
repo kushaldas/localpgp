@@ -106,9 +106,9 @@ async function getCurrentTabOrigin(): Promise<void> {
         // Set favicon
         try {
           const hostname = url.hostname;
-          siteIcon.innerHTML = hostname.charAt(0).toUpperCase();
+          siteIcon.textContent = hostname.charAt(0).toUpperCase();
         } catch {
-          siteIcon.innerHTML = '🌐';
+          siteIcon.textContent = '🌐';
         }
       } else {
         currentTabOrigin = null;
@@ -151,34 +151,40 @@ function updateCurrentSiteStatus(): void {
 function renderSitesList(): void {
   sitesCount.textContent = String(allowedOrigins.length);
   
+  // Clear existing content
+  sitesList.textContent = '';
+  
   if (allowedOrigins.length === 0) {
-    sitesList.innerHTML = `
-      <div class="empty-state">
-        <span>🔒</span>
-        No sites allowed yet
-      </div>
-    `;
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    const icon = document.createElement('span');
+    icon.textContent = '🔒';
+    emptyState.appendChild(icon);
+    emptyState.appendChild(document.createTextNode(' No sites allowed yet'));
+    sitesList.appendChild(emptyState);
     return;
   }
   
-  sitesList.innerHTML = allowedOrigins
-    .map(origin => `
-      <div class="site-item" data-origin="${escapeHtml(origin)}">
-        <span class="site-item-origin">${escapeHtml(origin)}</span>
-        <button class="remove-btn" title="Remove">×</button>
-      </div>
-    `)
-    .join('');
-  
-  // Add remove handlers
-  sitesList.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const item = (e.target as HTMLElement).closest('.site-item') as HTMLElement;
-      const origin = item.dataset.origin;
-      if (origin) {
-        await removeOrigin(origin);
-      }
+  allowedOrigins.forEach(origin => {
+    const item = document.createElement('div');
+    item.className = 'site-item';
+    item.dataset.origin = origin;
+    
+    const originSpan = document.createElement('span');
+    originSpan.className = 'site-item-origin';
+    originSpan.textContent = origin;
+    item.appendChild(originSpan);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.title = 'Remove';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', async () => {
+      await removeOrigin(origin);
     });
+    item.appendChild(removeBtn);
+    
+    sitesList.appendChild(item);
   });
 }
 
@@ -224,13 +230,6 @@ async function toggleCurrentSite(): Promise<void> {
   } else {
     await addOrigin(currentTabOrigin);
   }
-}
-
-// Escape HTML
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // Event Listeners

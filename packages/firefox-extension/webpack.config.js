@@ -35,7 +35,6 @@ module.exports = {
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'src/icons/*.png', to: 'icons/[name][ext]' },
-        { from: 'src/demo.html', to: 'demo.html' },
         { from: 'src/localpgp-client-api.js', to: 'localpgp-client-api.js' },
       ],
     }),
