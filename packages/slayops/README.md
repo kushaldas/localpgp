@@ -51,10 +51,27 @@ const pgp = new SlayOps(config);
 ```
 
 **Config options:**
-- `chromeExtensionId` - Chrome extension ID (default: 'afaoooloeghgffoacafdcomoooejfgcf')
+- `chromeExtensionId` - Chrome extension ID (uses this ID only)
+- `chromeExtensionIds` - Array of Chrome extension IDs to try (for dev + production)
 - `firefoxExtensionId` - Firefox extension ID (default: 'localpgp@localpgp.org')
 - `timeout` - Request timeout in ms (default: 30000)
 - `autoConnect` - Auto-connect on creation (default: false)
+
+**Default behavior:** Uses the production Chrome Web Store ID (`ckgehekhpgcaaikpadklkkjgdgoebdnh`).
+
+**For local development:** Pass your dev extension ID:
+```javascript
+// Option 1: Single dev ID
+const pgp = new SlayOps({ chromeExtensionId: 'your-local-dev-id' });
+
+// Option 2: Try multiple IDs (production first, then dev)
+const pgp = new SlayOps({ 
+  chromeExtensionIds: [
+    'ckgehekhpgcaaikpadklkkjgdgoebdnh',  // Production
+    'your-local-dev-id'                    // Dev fallback
+  ]
+});
+```
 
 ### Connection
 

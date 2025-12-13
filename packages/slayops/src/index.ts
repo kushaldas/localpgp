@@ -159,8 +159,10 @@ export type SlayOpsEventHandler = (data?: unknown) => void;
 
 /** Configuration options */
 export interface SlayOpsConfig {
-  /** Chrome extension ID (default: afaoooloeghgffoacafdcomoooejfgcf) */
+  /** Chrome extension ID (default: production ID, with fallback to common dev IDs) */
   chromeExtensionId?: string;
+  /** Additional Chrome extension IDs to try (for local development) */
+  chromeExtensionIds?: string[];
   /** Firefox extension ID (default: localpgp@localpgp.org) */
   firefoxExtensionId?: string;
   /** Request timeout in milliseconds (default: 30000) */
@@ -168,6 +170,9 @@ export interface SlayOpsConfig {
   /** Auto-connect on instantiation (default: false) */
   autoConnect?: boolean;
 }
+
+// Production Chrome extension ID
+const CHROME_EXTENSION_ID_PRODUCTION = 'ckgehekhpgcaaikpadklkkjgdgoebdnh';
 
 // ============================================================================
 // Internal Types
@@ -196,7 +201,8 @@ interface PendingRequest {
  * SlayOps - Main class for interacting with LocalPGP extension
  */
 export class SlayOps {
-  private chromeExtensionId: string;
+  private chromeExtensionIds: string[];
+  private activeExtensionId: string | null = null;
   private firefoxExtensionId: string;
   private timeout: number;
   private browserType: BrowserType = 'unknown';
@@ -207,7 +213,18 @@ export class SlayOps {
   private initialized = false;
 
   constructor(config: SlayOpsConfig = {}) {
-    this.chromeExtensionId = config.chromeExtensionId || 'afaoooloeghgffoacafdcomoooejfgcf';
+    // Build list of Chrome extension IDs to try
+    if (config.chromeExtensionId) {
+      // User specified a single ID - use only that
+      this.chromeExtensionIds = [config.chromeExtensionId];
+    } else if (config.chromeExtensionIds && config.chromeExtensionIds.length > 0) {
+      // User specified multiple IDs
+      this.chromeExtensionIds = config.chromeExtensionIds;
+    } else {
+      // Default: production ID only
+      this.chromeExtensionIds = [CHROME_EXTENSION_ID_PRODUCTION];
+    }
+    
     this.firefoxExtensionId = config.firefoxExtensionId || 'localpgp@localpgp.org';
     this.timeout = config.timeout || 30000;
 
@@ -216,6 +233,13 @@ export class SlayOps {
     if (config.autoConnect) {
       this.connect().catch(() => {});
     }
+  }
+
+  /**
+   * Get the Chrome extension ID (for backwards compatibility)
+   */
+  private get chromeExtensionId(): string {
+    return this.activeExtensionId || this.chromeExtensionIds[0];
   }
 
   // ==========================================================================
@@ -368,6 +392,42 @@ export class SlayOps {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 
+  /**
+   * Try sending message to Chrome extension, cycling through extension IDs
+   */
+  private tryChromeExtensionIds(
+    action: string,
+    data: Record<string, unknown>,
+    index: number,
+    onSuccess: (response: ExtensionResponse) => void,
+    onError: (error: Error) => void
+  ): void {
+    if (index >= this.chromeExtensionIds.length) {
+      onError(new Error('Could not connect to LocalPGP extension. Make sure it is installed and this site is allowed.'));
+      return;
+    }
+
+    const extensionId = this.chromeExtensionIds[index];
+    
+    chrome.runtime.sendMessage(
+      extensionId,
+      { action, ...data },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          // Try next extension ID
+          this.tryChromeExtensionIds(action, data, index + 1, onSuccess, onError);
+        } else if (response) {
+          // Success - remember this extension ID for future requests
+          this.activeExtensionId = extensionId;
+          onSuccess(response);
+        } else {
+          // No response, try next
+          this.tryChromeExtensionIds(action, data, index + 1, onSuccess, onError);
+        }
+      }
+    );
+  }
+
   private async sendToExtension(action: string, data: Record<string, unknown> = {}): Promise<ExtensionResponse> {
     const browserType = this.browserType;
 
@@ -402,18 +462,11 @@ export class SlayOps {
             return;
           }
 
-          chrome.runtime.sendMessage(
-            this.chromeExtensionId,
-            { action, ...data },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                clearTimeout(timeoutId);
-                reject(new Error(chrome.runtime.lastError.message));
-              } else {
-                handleResponse(response);
-              }
-            }
-          );
+          // Try each extension ID until one works
+          this.tryChromeExtensionIds(action, data, 0, handleResponse, (err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          });
         } else if (browserType === 'firefox-extension') {
           (window as unknown as { browser: typeof browser }).browser.runtime
             .sendMessage({ action, ...data })
@@ -436,8 +489,17 @@ export class SlayOps {
           
           if (localpgp && typeof localpgp[action] === 'function') {
             // Use injected API directly
+            // The injected API already returns { success: true, data: ... } format
             localpgp[action](data)
-              .then((result) => handleResponse({ success: true, data: result }))
+              .then((result) => {
+                // Check if result is already in response format
+                const resp = result as ExtensionResponse;
+                if (resp && typeof resp === 'object' && 'success' in resp) {
+                  handleResponse(resp);
+                } else {
+                  handleResponse({ success: true, data: result });
+                }
+              })
               .catch((err: Error) => {
                 clearTimeout(timeoutId);
                 reject(err);

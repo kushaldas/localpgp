@@ -1,6 +1,6 @@
 {
   "name": "slayops",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Simple JavaScript API for LocalPGP browser extension - encrypt, decrypt, sign, verify with GnuPG",
   "main": "dist/slayops.js",
