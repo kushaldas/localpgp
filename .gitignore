@@ -44,3 +44,5 @@ temp/
 
 # Package manager
 .pnpm-store/
+
+*.zip
