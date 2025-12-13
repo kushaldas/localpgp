@@ -1,0 +1,43 @@
+{
+  "name": "tinyopgp",
+  "version": "0.1.0",
+  "description": "TypeScript library for OpenPGP operations via gpgme-json native messaging",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "openpgp",
+    "gpg",
+    "gnupg",
+    "gpgme",
+    "encryption",
+    "native-messaging"
+  ],
+  "author": "",
+  "license": "LGPL-3.0-or-later",
+  "devDependencies": {
+    "@types/chrome": "^0.0.260",
+    "eslint": "^8.56.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}

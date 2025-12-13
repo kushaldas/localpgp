@@ -1,0 +1,31 @@
+{
+  "name": "localpgp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser extension for OpenPGP operations via local GnuPG installation",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:chrome": "pnpm --filter chrome-extension dev",
+    "dev:firefox": "pnpm --filter firefox-extension dev",
+    "test": "pnpm --filter tinyopgp test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": [
+    "openpgp",
+    "gpg",
+    "gnupg",
+    "encryption",
+    "browser-extension",
+    "native-messaging"
+  ],
+  "author": "",
+  "license": "LGPL-3.0-or-later",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
