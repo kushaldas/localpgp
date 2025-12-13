@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "LocalPGP",
+  "version": "0.1.0",
+  "description": "OpenPGP operations using your local GnuPG installation",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "localpgp@localpgp.org",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "storage",
+    "nativeMessaging",
+    "scripting",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "LocalPGP"
+  },
+  "options_ui": {
+    "page": "options/options.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [{
+    "resources": ["localpgp-client-api.js"],
+    "matches": ["*://*/*"]
+  }]
+}

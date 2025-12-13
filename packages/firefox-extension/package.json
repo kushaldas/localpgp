@@ -1,0 +1,37 @@
+{
+  "name": "firefox-extension",
+  "version": "1.0.0",
+  "private": true,
+  "license": "LGPL-3.0-or-later",
+  "description": "LocalPGP Firefox Extension",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf dist",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "web-ext": "web-ext run --source-dir ./dist"
+  },
+  "dependencies": {
+    "tinyopgp": "workspace:*"
+  },
+  "devDependencies": {
+    "@anthropic-ai/bedrock-sdk": ">=0.0.0",
+    "@anthropic-ai/sdk": ">=0.0.0",
+    "@anthropic-ai/tokenizer": ">=0.0.0",
+    "@anthropic-ai/vertex-sdk": ">=0.0.0",
+    "@playwright/test": "^1.57.0",
+    "@types/firefox-webext-browser": "^120.0.0",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.9.1",
+    "eslint": "^8.56.0",
+    "html-webpack-plugin": "^5.6.0",
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "web-ext": "^9.2.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tinyopgp - OpenPGP Operations Demo</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --error: #dc2626;
+      --warning: #d97706;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .status-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-indicator.connected {
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.error {
+      background: var(--error);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-text {
+      flex: 1;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-header.encrypt { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+    .card-header.decrypt { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+    .card-header.sign { background: linear-gradient(135deg, #059669, #047857); }
+    .card-header.verify { background: linear-gradient(135deg, #d97706, #b45309); }
+    .card-header.keys { background: linear-gradient(135deg, #64748b, #475569); }
+
+    .card-header h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    textarea.output {
+      background: #f1f5f9;
+      min-height: 100px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .result {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .result.success {
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
+    }
+
+    .result.error {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    .result.info {
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      color: #1e40af;
+    }
+
+    .key-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .key-item {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .key-item:hover {
+      border-color: var(--primary);
+      background: #f8fafc;
+    }
+
+    .key-item.selected {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .key-fingerprint {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+
+    .key-userid {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .key-badges {
+      display: flex;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .badge-encrypt { background: #dbeafe; color: #1e40af; }
+    .badge-sign { background: #dcfce7; color: #166534; }
+    .badge-secret { background: #fef3c7; color: #92400e; }
+    .badge-card { background: #fee2e2; color: #991b1b; }
+
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-group input {
+      width: auto;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      body {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 tinyopgp Demo</h1>
+      <p>OpenPGP operations via gpgme-json native messaging</p>
+    </header>
+
+    <div class="status-bar">
+      <div id="statusIndicator" class="status-indicator"></div>
+      <div class="status-text">
+        <strong id="statusTitle">Not Connected</strong>
+        <span id="statusDetail" style="color: var(--text-muted); margin-left: 0.5rem;"></span>
+      </div>
+      <button id="connectBtn" class="btn btn-primary" onclick="connect()">Connect</button>
+    </div>
+
+    <div class="grid">
+      <!-- Key Management Card -->
+      <div class="card">
+        <div class="card-header keys">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+          <h2>Key Management</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Search Keys</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="keySearch" placeholder="Email, name, or fingerprint..." />
+              <button class="btn btn-secondary" onclick="searchKeys()">Search</button>
+              <button class="btn btn-secondary" onclick="listAllKeys()">All</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Available Keys</label>
+            <div id="keyList" class="key-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+                Connect and search for keys
+              </p>
+            </div>
+          </div>
+          <div id="keyResult"></div>
+        </div>
+      </div>
+
+      <!-- Encrypt Card -->
+      <div class="card">
+        <div class="card-header encrypt">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          <h2>Encrypt</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Recipient Key (Fingerprint or Email)</label>
+            <input type="text" id="encryptRecipient" placeholder="e.g., 5286C32E7C71E14C4C82F9AE0B207108925CB162" />
+          </div>
+          <div class="form-group">
+            <label>Message to Encrypt</label>
+            <textarea id="encryptInput" placeholder="Enter your secret message here..."></textarea>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="encryptSign" />
+              <label for="encryptSign" style="margin-bottom: 0;">Sign while encrypting</label>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="encryptMessage()">🔒 Encrypt</button>
+            <button class="btn btn-secondary" onclick="clearEncrypt()">Clear</button>
+          </div>
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Encrypted Output</label>
+            <textarea id="encryptOutput" class="output" readonly placeholder="Encrypted message will appear here..."></textarea>
+          </div>
+          <div id="encryptResult"></div>
+        </div>
+      </div>
+
+      <!-- Decrypt Card -->
+      <div class="card">
+        <div class="card-header decrypt">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+          </svg>
+          <h2>Decrypt</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Encrypted Message (PGP Armored)</label>
+            <textarea id="decryptInput" placeholder="Paste your PGP encrypted message here..."></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="decryptMessage()">🔓 Decrypt</button>
+            <button class="btn btn-secondary" onclick="pasteFromEncrypt()">← Paste from Encrypt</button>
+            <button class="btn btn-secondary" onclick="clearDecrypt()">Clear</button>
+          </div>
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Decrypted Output</label>
+            <textarea id="decryptOutput" class="output" readonly placeholder="Decrypted message will appear here..."></textarea>
+          </div>
+          <div id="decryptResult"></div>
+        </div>
+      </div>
+
+      <!-- Sign Card -->
+      <div class="card">
+        <div class="card-header sign">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+          </svg>
+          <h2>Sign</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Signing Key (optional, uses default if empty)</label>
+            <input type="text" id="signKey" placeholder="Fingerprint of signing key..." />
+          </div>
+          <div class="form-group">
+            <label>Message to Sign</label>
+            <textarea id="signInput" placeholder="Enter your message to sign..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Signature Type</label>
+            <select id="signMode">
+              <option value="clearsign">Clearsign (message + signature together)</option>
+              <option value="detached">Detached (signature only)</option>
+            </select>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-success" onclick="signMessage()">✍️ Sign</button>
+            <button class="btn btn-secondary" onclick="clearSign()">Clear</button>
+          </div>
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Signature Output</label>
+            <textarea id="signOutput" class="output" readonly placeholder="Signed message will appear here..."></textarea>
+          </div>
+          <div id="signResult"></div>
+        </div>
+      </div>
+
+      <!-- Verify Card -->
+      <div class="card">
+        <div class="card-header verify">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          <h2>Verify</h2>
+        </div>
+        <div class="card-body">
+          <div class="tabs">
+            <button class="tab active" onclick="setVerifyMode('clearsigned')">Clearsigned</button>
+            <button class="tab" onclick="setVerifyMode('detached')">Detached Signature</button>
+          </div>
+          <div id="verifyClearsigned">
+            <div class="form-group">
+              <label>Clearsigned Message</label>
+              <textarea id="verifyInput" placeholder="Paste clearsigned PGP message here..."></textarea>
+            </div>
+          </div>
+          <div id="verifyDetached" class="hidden">
+            <div class="form-group">
+              <label>Original Message</label>
+              <textarea id="verifyOriginal" placeholder="Paste original message here..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Detached Signature</label>
+              <textarea id="verifySignature" placeholder="Paste detached PGP signature here..."></textarea>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="verifyMessage()">✓ Verify</button>
+            <button class="btn btn-secondary" onclick="pasteFromSign()">← Paste from Sign</button>
+            <button class="btn btn-secondary" onclick="clearVerify()">Clear</button>
+          </div>
+          <div id="verifyResult"></div>
+        </div>
+      </div>
+
+      <!-- Info Card -->
+      <div class="card">
+        <div class="card-header" style="background: linear-gradient(135deg, #0891b2, #0e7490);">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h2>About tinyopgp</h2>
+        </div>
+        <div class="card-body">
+          <p style="margin-bottom: 1rem;">
+            <strong>tinyopgp</strong> is a TypeScript library for performing OpenPGP operations 
+            using your system's GnuPG installation via the <code>gpgme-json</code> native messaging protocol.
+          </p>
+          <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            This demo page connects to a browser extension that bridges the library to the native 
+            gpgme-json binary. All cryptographic operations are performed by GnuPG on your system.
+          </p>
+          <div style="background: #f1f5f9; padding: 1rem; border-radius: 6px; font-size: 0.875rem;">
+            <strong>Requirements:</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem;">
+              <li>GnuPG with gpgme-json installed</li>
+              <li>Chrome/Firefox extension with native messaging</li>
+              <li>Keys imported in your GnuPG keyring</li>
+            </ul>
+          </div>
+          <div class="btn-row" style="margin-top: 1rem;">
+            <button class="btn btn-secondary" onclick="getDefaultKey()">Get Default Key</button>
+            <button class="btn btn-secondary" onclick="showVersion()">Version Info</button>
+          </div>
+          <div id="infoResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Extension communication - Firefox internal messaging
+    let isConnected = false;
+    let selectedKeys = [];
+    let verifyMode = 'clearsigned';
+
+    // Send message to extension background script
+    async function sendToExtension(action, data = {}) {
+      try {
+        const response = await browser.runtime.sendMessage({ action, ...data });
+        if (response?.success === false) {
+          throw new Error(response.error?.message || response.error || 'Operation failed');
+        }
+        return response;
+      } catch (err) {
+        throw new Error(err.message || 'Extension messaging error');
+      }
+    }
+
+    // Update status bar
+    function updateStatus(status, detail = '', isError = false) {
+      const indicator = document.getElementById('statusIndicator');
+      const title = document.getElementById('statusTitle');
+      const detailEl = document.getElementById('statusDetail');
+      const btn = document.getElementById('connectBtn');
+
+      indicator.className = 'status-indicator';
+      if (status === 'connected') {
+        indicator.classList.add('connected');
+        title.textContent = 'Connected';
+        btn.textContent = 'Reconnect';
+        isConnected = true;
+      } else if (isError) {
+        indicator.classList.add('error');
+        title.textContent = 'Error';
+        btn.textContent = 'Retry';
+        isConnected = false;
+      } else {
+        title.textContent = status;
+        btn.textContent = 'Connect';
+        isConnected = false;
+      }
+      detailEl.textContent = detail;
+    }
+
+    // Show result message
+    function showResult(elementId, message, type = 'info') {
+      const el = document.getElementById(elementId);
+      el.innerHTML = `<div class="result ${type}">${message}</div>`;
+    }
+
+    // Connect to gpgme-json
+    async function connect() {
+      const btn = document.getElementById('connectBtn');
+      btn.innerHTML = '<span class="loading"></span>';
+      btn.disabled = true;
+
+      try {
+        const result = await sendToExtension('connect');
+        updateStatus('connected', 'gpgme-json native messaging');
+        // Auto-load some keys on connect
+        await listAllKeys();
+      } catch (error) {
+        updateStatus('Connection Failed', error.message, true);
+      } finally {
+        btn.innerHTML = isConnected ? 'Reconnect' : 'Connect';
+        btn.disabled = false;
+      }
+    }
+
+    // Search keys
+    async function searchKeys() {
+      const search = document.getElementById('keySearch').value.trim();
+      if (!search) {
+        showResult('keyResult', 'Please enter a search term', 'error');
+        return;
+      }
+
+      try {
+        const result = await sendToExtension('getKeys', { pattern: search });
+        displayKeys(result.data || []);
+      } catch (error) {
+        showResult('keyResult', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    // List all keys
+    async function listAllKeys() {
+      try {
+        const result = await sendToExtension('getKeys', { pattern: '' });
+        displayKeys(result.data || []);
+      } catch (error) {
+        showResult('keyResult', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Display keys in the list
+    function displayKeys(keys) {
+      const container = document.getElementById('keyList');
+      
+      if (!keys || keys.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No keys found</p>';
+        return;
+      }
+
+      container.innerHTML = keys.map(key => {
+        const userId = key.userIds?.[0] || {};
+        const badges = [];
+        if (key.canEncrypt) badges.push('<span class="badge badge-encrypt">Encrypt</span>');
+        if (key.canSign) badges.push('<span class="badge badge-sign">Sign</span>');
+        if (key.hasSecret) badges.push('<span class="badge badge-secret">Secret</span>');
+        if (key.subkeys?.some(sk => sk.isCardKey)) badges.push('<span class="badge badge-card">Smart Card</span>');
+
+        return `
+          <div class="key-item" onclick="selectKey('${key.fingerprint}', '${userId.email || ''}')">
+            <div class="key-userid">${userId.name || 'Unknown'} ${userId.email ? `&lt;${userId.email}&gt;` : ''}</div>
+            <div class="key-fingerprint">${key.fingerprint}</div>
+            <div class="key-badges">${badges.join('')}</div>
+          </div>
+        `;
+      }).join('');
+
+      showResult('keyResult', `Found ${keys.length} key(s)`, 'success');
+    }
+
+    // Select a key and auto-fill inputs
+    function selectKey(fingerprint, email) {
+      document.getElementById('encryptRecipient').value = fingerprint;
+      
+      // Visual feedback
+      document.querySelectorAll('.key-item').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+    }
+
+    // Encrypt message
+    async function encryptMessage() {
+      const recipient = document.getElementById('encryptRecipient').value.trim();
+      const message = document.getElementById('encryptInput').value;
+      const sign = document.getElementById('encryptSign').checked;
+
+      if (!recipient) {
+        showResult('encryptResult', 'Please enter a recipient key', 'error');
+        return;
+      }
+      if (!message) {
+        showResult('encryptResult', 'Please enter a message to encrypt', 'error');
+        return;
+      }
+
+      try {
+        const options = {
+          data: message,
+          publicKeys: [recipient],
+          armor: true
+        };
+        if (sign) {
+          options.sign = true;
+        }
+
+        const result = await sendToExtension('encrypt', options);
+        document.getElementById('encryptOutput').value = result.data?.data || result.data || '';
+        showResult('encryptResult', 'Message encrypted successfully!', 'success');
+      } catch (error) {
+        showResult('encryptResult', `Encryption failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Decrypt message
+    async function decryptMessage() {
+      const encrypted = document.getElementById('decryptInput').value.trim();
+
+      if (!encrypted) {
+        showResult('decryptResult', 'Please enter an encrypted message', 'error');
+        return;
+      }
+
+      try {
+        const result = await sendToExtension('decrypt', { data: encrypted });
+        document.getElementById('decryptOutput').value = result.data?.data || result.data || '';
+        
+        let info = 'Message decrypted successfully!';
+        if (result.data?.signatures?.length > 0) {
+          const sig = result.data.signatures[0];
+          info += `<br>Signed by: ${sig.fingerprint || 'Unknown'}`;
+          info += sig.valid ? ' ✓ Valid' : ' ✗ Invalid';
+        }
+        showResult('decryptResult', info, 'success');
+      } catch (error) {
+        showResult('decryptResult', `Decryption failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Sign message
+    async function signMessage() {
+      const message = document.getElementById('signInput').value;
+      const keyId = document.getElementById('signKey').value.trim();
+      const mode = document.getElementById('signMode').value;
+
+      if (!message) {
+        showResult('signResult', 'Please enter a message to sign', 'error');
+        return;
+      }
+
+      try {
+        const options = {
+          data: message,
+          mode: mode
+        };
+        if (keyId) {
+          options.secretKeys = [keyId];
+        }
+
+        const result = await sendToExtension('sign', options);
+        document.getElementById('signOutput').value = result.data?.data || result.data || '';
+        showResult('signResult', 'Message signed successfully!', 'success');
+      } catch (error) {
+        showResult('signResult', `Signing failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Verify message
+    async function verifyMessage() {
+      try {
+        let result;
+        
+        if (verifyMode === 'clearsigned') {
+          const signed = document.getElementById('verifyInput').value.trim();
+          if (!signed) {
+            showResult('verifyResult', 'Please enter a clearsigned message', 'error');
+            return;
+          }
+          result = await sendToExtension('verify', { data: signed });
+        } else {
+          const original = document.getElementById('verifyOriginal').value;
+          const signature = document.getElementById('verifySignature').value.trim();
+          if (!original || !signature) {
+            showResult('verifyResult', 'Please enter both the original message and signature', 'error');
+            return;
+          }
+          result = await sendToExtension('verify', { data: original, signature: signature });
+        }
+
+        const data = result.data;
+        
+        // Debug: log the full response
+        console.log('Verify response:', JSON.stringify(result, null, 2));
+        
+        let info = '';
+        
+        if (data.isValid) {
+          info = '✓ Signature is <strong>VALID</strong>';
+        } else {
+          info = '✗ Signature is <strong>INVALID</strong>';
+        }
+
+        if (data.signatures?.length > 0) {
+          info += '<br><br>Signatures:';
+          data.signatures.forEach((sig, i) => {
+            info += `<br>${i + 1}. ${sig.fingerprint || 'Unknown key'}`;
+            info += sig.valid ? ' ✓' : ' ✗';
+            if (sig.status) info += ` (${sig.status})`;
+          });
+        }
+
+        showResult('verifyResult', info, data.isValid ? 'success' : 'error');
+      } catch (error) {
+        showResult('verifyResult', `Verification failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Set verify mode
+    function setVerifyMode(mode) {
+      verifyMode = mode;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      
+      document.getElementById('verifyClearsigned').classList.toggle('hidden', mode !== 'clearsigned');
+      document.getElementById('verifyDetached').classList.toggle('hidden', mode !== 'detached');
+    }
+
+    // Get default key
+    async function getDefaultKey() {
+      try {
+        const result = await sendToExtension('getDefaultKey');
+        const key = result.data;
+        if (key) {
+          const userId = key.userIds?.[0] || {};
+          let info = `<strong>Default Signing Key:</strong><br>`;
+          info += `Name: ${userId.name || 'Unknown'}<br>`;
+          info += `Email: ${userId.email || 'Unknown'}<br>`;
+          info += `Fingerprint: <code>${key.fingerprint}</code>`;
+          if (key.subkeys?.some(sk => sk.isCardKey)) {
+            info += '<br><span class="badge badge-card">Smart Card Key</span>';
+          }
+          showResult('infoResult', info, 'info');
+        } else {
+          showResult('infoResult', 'No default key configured', 'error');
+        }
+      } catch (error) {
+        showResult('infoResult', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Show version info
+    async function showVersion() {
+      try {
+        const result = await sendToExtension('status');
+        showResult('infoResult', `Status: ${result.data?.status || 'Unknown'}`, 'info');
+      } catch (error) {
+        showResult('infoResult', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Helper functions
+    function pasteFromEncrypt() {
+      document.getElementById('decryptInput').value = document.getElementById('encryptOutput').value;
+    }
+
+    function pasteFromSign() {
+      const signOutput = document.getElementById('signOutput').value;
+      if (verifyMode === 'clearsigned') {
+        document.getElementById('verifyInput').value = signOutput;
+      } else {
+        document.getElementById('verifySignature').value = signOutput;
+        document.getElementById('verifyOriginal').value = document.getElementById('signInput').value;
+      }
+    }
+
+    function clearEncrypt() {
+      document.getElementById('encryptRecipient').value = '';
+      document.getElementById('encryptInput').value = '';
+      document.getElementById('encryptOutput').value = '';
+      document.getElementById('encryptResult').innerHTML = '';
+    }
+
+    function clearDecrypt() {
+      document.getElementById('decryptInput').value = '';
+      document.getElementById('decryptOutput').value = '';
+      document.getElementById('decryptResult').innerHTML = '';
+    }
+
+    function clearSign() {
+      document.getElementById('signKey').value = '';
+      document.getElementById('signInput').value = '';
+      document.getElementById('signOutput').value = '';
+      document.getElementById('signResult').innerHTML = '';
+    }
+
+    function clearVerify() {
+      document.getElementById('verifyInput').value = '';
+      document.getElementById('verifyOriginal').value = '';
+      document.getElementById('verifySignature').value = '';
+      document.getElementById('verifyResult').innerHTML = '';
+    }
+
+    // Initialize - Firefox internal demo page
+    document.addEventListener('DOMContentLoaded', () => {
+      updateStatus('Ready (Firefox)', 'Click Connect to start');
+    });
+  </script>
+</body>
+</html>

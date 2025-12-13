@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalPGP Options</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-badge.connected {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-badge.disconnected {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .key-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .key-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+
+    .key-info {
+      flex: 1;
+    }
+
+    .key-name {
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .key-email {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .key-fingerprint {
+      font-family: monospace;
+      font-size: 11px;
+      color: #999;
+    }
+
+    .key-badges {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .badge.secret {
+      background: #fff3e0;
+      color: #ef6c00;
+    }
+
+    .badge.expired {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .badge.revoked {
+      background: #fce4ec;
+      color: #ad1457;
+    }
+
+    .key-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .key-actions button {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .key-actions button:hover {
+      background: #f5f5f5;
+      border-color: #ccc;
+    }
+
+    .key-actions button.danger:hover {
+      background: #ffebee;
+      border-color: #ef5350;
+      color: #c62828;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .form-group textarea {
+      height: 120px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    button.primary {
+      padding: 10px 20px;
+      background: #4a90d9;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button.primary:hover {
+      background: #3a7bc8;
+    }
+
+    button.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .alert.visible {
+      display: block;
+    }
+
+    .alert.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+    }
+
+    .alert.error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .empty-state p {
+      margin-bottom: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab.active {
+      color: #4a90d9;
+      border-bottom-color: #4a90d9;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 LocalPGP Options</h1>
+      <span class="status-badge" id="statusBadge">Checking...</span>
+    </div>
+
+    <div id="alertBox" class="alert"></div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="keys">Keys</button>
+      <button class="tab" data-tab="import">Import Key</button>
+      <button class="tab" data-tab="generate">Generate Key</button>
+      <button class="tab" data-tab="origins">Allowed Sites</button>
+      <button class="tab" data-tab="settings">Settings</button>
+      <button class="tab" data-tab="demo">Demo</button>
+    </div>
+
+    <!-- Keys Tab -->
+    <div class="tab-content active" id="keys-tab">
+      <div class="card">
+        <h2>🔑 Your Keys</h2>
+        <div id="keyList" class="key-list">
+          <div class="empty-state">
+            <p>Loading keys...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Tab -->
+    <div class="tab-content" id="import-tab">
+      <div class="card">
+        <h2>📥 Import Key</h2>
+        <div class="form-group">
+          <label for="importKeyArmor">Paste armored key (public or private)</label>
+          <textarea id="importKeyArmor" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----"></textarea>
+        </div>
+        <div class="button-row">
+          <button class="primary" id="importBtn">Import Key</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate Tab -->
+    <div class="tab-content" id="generate-tab">
+      <div class="card">
+        <h2>✨ Generate New Key</h2>
+        <div class="form-group">
+          <label for="genName">Name</label>
+          <input type="text" id="genName" placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label for="genEmail">Email</label>
+          <input type="email" id="genEmail" placeholder="john@example.com">
+        </div>
+        <div class="button-row">
+          <button class="primary" id="generateBtn">Generate Key</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settings-tab">
+      <div class="card">
+        <h2>⚙️ Settings</h2>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="alwaysTrust"> Always trust keys (skip validity check)
+          </label>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="armorOutput" checked> Use ASCII armor for output
+          </label>
+        </div>
+        <div class="button-row">
+          <button class="primary" id="saveSettingsBtn">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Allowed Sites Tab -->
+    <div class="tab-content" id="origins-tab">
+      <div class="card">
+        <h2>🌐 Allowed Sites</h2>
+        <p style="color: #666; margin-bottom: 16px; font-size: 13px;">
+          Websites from these origins can use LocalPGP. The content script will be injected into pages from allowed origins.
+        </p>
+        
+        <h3 style="font-size: 14px; color: #555; margin-bottom: 8px;">Built-in (always allowed)</h3>
+        <ul id="builtinOrigins" class="key-list" style="margin-bottom: 16px;">
+          <li style="font-family: monospace; font-size: 13px; color: #666;">http://localhost</li>
+          <li style="font-family: monospace; font-size: 13px; color: #666;">https://localhost</li>
+          <li style="font-family: monospace; font-size: 13px; color: #666;">http://127.0.0.1</li>
+          <li style="font-family: monospace; font-size: 13px; color: #666;">https://127.0.0.1</li>
+        </ul>
+        
+        <h3 style="font-size: 14px; color: #555; margin-bottom: 8px;">Custom Origins</h3>
+        <ul id="originsList" class="key-list">
+          <li style="color: #999;">No custom origins added</li>
+        </ul>
+        
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <input type="text" id="newOrigin" placeholder="https://example.com" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+          <button class="primary" id="addOriginBtn">Add Origin</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo Tab -->
+    <div class="tab-content" id="demo-tab">
+      <div class="card">
+        <h2>🧪 Interactive Demo</h2>
+        <p style="margin-bottom: 16px; color: #666;">
+          Open the full interactive demo page to test all PGP operations including encryption, decryption, signing, and verification.
+        </p>
+        <div class="button-row" style="justify-content: flex-start;">
+          <button class="primary" id="openDemoBtn">Open Demo Page</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
