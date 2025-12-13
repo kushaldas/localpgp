@@ -1,0 +1,43 @@
+{
+  "name": "slayops",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Simple JavaScript API for LocalPGP browser extension - encrypt, decrypt, sign, verify with GnuPG",
+  "main": "dist/slayops.js",
+  "module": "dist/slayops.esm.js",
+  "types": "dist/slayops.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/slayops.esm.js",
+      "require": "./dist/slayops.js",
+      "types": "./dist/slayops.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "openpgp",
+    "gpg",
+    "gnupg",
+    "encryption",
+    "signing",
+    "pgp",
+    "browser-extension"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/chrome": "^0.0.260",
+    "rollup": "^4.9.0",
+    "rollup-plugin-dts": "^6.1.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
+  }
+}
