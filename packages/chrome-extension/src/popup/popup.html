@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalPGP</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      width: 360px;
+      min-height: 400px;
+      background: #f5f5f5;
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 16px;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header h1 span {
+      font-size: 20px;
+    }
+    
+    /* Connection Status */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff5252;
+    }
+    
+    .status-dot.connected {
+      background: #4caf50;
+      box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
+    }
+    
+    /* Current Site Section */
+    .current-site {
+      background: white;
+      margin: 12px;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .current-site h2 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .site-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .site-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    
+    .site-details {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .site-origin {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .site-status {
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    
+    .site-status.allowed {
+      color: #4caf50;
+    }
+    
+    .site-status.not-allowed {
+      color: #ff9800;
+    }
+    
+    .toggle-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    
+    .toggle-btn.allow {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .toggle-btn.allow:hover {
+      background: #43a047;
+    }
+    
+    .toggle-btn.revoke {
+      background: #ff5252;
+      color: white;
+    }
+    
+    .toggle-btn.revoke:hover {
+      background: #e53935;
+    }
+    
+    .toggle-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    /* Allowed Sites List */
+    .allowed-sites {
+      background: white;
+      margin: 12px;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .allowed-sites h2 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .sites-count {
+      font-size: 12px;
+      background: #e0e0e0;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: normal;
+    }
+    
+    .sites-list {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    
+    .site-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      background: #f9f9f9;
+    }
+    
+    .site-item:hover {
+      background: #f0f0f0;
+    }
+    
+    .site-item-origin {
+      font-size: 13px;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    
+    .remove-btn:hover {
+      background: #ffebee;
+      color: #f44336;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: #999;
+      font-size: 13px;
+    }
+    
+    .empty-state span {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    
+    /* Add Site Form */
+    .add-site {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+    }
+    
+    .add-site input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    .add-site input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .add-btn {
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    
+    .add-btn:hover {
+      background: #5a6fd6;
+    }
+    
+    /* Footer */
+    .footer {
+      padding: 12px 16px;
+      text-align: center;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Error message */
+    .error-toast {
+      position: fixed;
+      bottom: 60px;
+      left: 12px;
+      right: 12px;
+      background: #f44336;
+      color: white;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+      z-index: 100;
+    }
+    
+    .error-toast.visible {
+      display: block;
+    }
+    
+    .success-toast {
+      position: fixed;
+      bottom: 60px;
+      left: 12px;
+      right: 12px;
+      background: #4caf50;
+      color: white;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+      z-index: 100;
+    }
+    
+    .success-toast.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with Connection Status -->
+  <div class="header">
+    <h1><span>🔐</span> LocalPGP</h1>
+    <div class="connection-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Checking connection...</span>
+    </div>
+  </div>
+  
+  <!-- Current Site Section -->
+  <div class="current-site">
+    <h2>Current Page</h2>
+    <div class="site-info">
+      <div class="site-icon" id="siteIcon">🌐</div>
+      <div class="site-details">
+        <div class="site-origin" id="currentOrigin">Loading...</div>
+        <div class="site-status" id="currentStatus">Checking...</div>
+      </div>
+    </div>
+    <button class="toggle-btn" id="toggleBtn" disabled>Loading...</button>
+  </div>
+  
+  <!-- Allowed Sites List -->
+  <div class="allowed-sites">
+    <h2>
+      Allowed Sites
+      <span class="sites-count" id="sitesCount">0</span>
+    </h2>
+    <div class="sites-list" id="sitesList">
+      <div class="empty-state">
+        <span>🔒</span>
+        No sites allowed yet
+      </div>
+    </div>
+    <div class="add-site">
+      <input type="text" id="newOriginInput" placeholder="https://example.com">
+      <button class="add-btn" id="addOriginBtn">Add</button>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <div class="footer">
+    <a href="#" id="optionsLink">Open Full Options →</a>
+  </div>
+  
+  <!-- Toast Messages -->
+  <div class="error-toast" id="errorToast"></div>
+  <div class="success-toast" id="successToast"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
