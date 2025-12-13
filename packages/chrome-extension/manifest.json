@@ -3,7 +3,6 @@
   "name": "LocalPGP",
   "version": "0.1.0",
   "description": "OpenPGP operations using your local GnuPG installation",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqxKJdUa+TFJHRNtb9z3m9LH3XfHvLbGQg5xXDzJ3kXRKjVLrKlFJdxJzRbHvFqzJ4mQKjQvLcJ+KdZqVLdHqKjHvqLdQmHKjTFzxKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQvLdZxKqJxKjTFzKqQXjRqKdQIDAQAB",
   "permissions": [
     "storage",
     "nativeMessaging",
