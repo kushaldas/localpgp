@@ -164,9 +164,39 @@ just dev-firefox
 just test
 ```
 
-## API (tinyopgp)
+## API
 
-The core library provides a simple API for PGP operations:
+### SlayOps (for websites)
+
+The `slayops` library is the main user-level API for integrating OpenPGP operations into your websites. It communicates with the LocalPGP browser extension to perform cryptographic operations using your local GnuPG installation.
+
+```javascript
+import { SlayOps } from 'slayops';
+
+// Create instance and connect to extension
+const pgp = new SlayOps();
+await pgp.connect();
+
+// Encrypt a message
+const encrypted = await pgp.encrypt('Hello, World!', ['recipient@example.com']);
+
+// Decrypt a message
+const result = await pgp.decrypt(encrypted);
+console.log(result.data); // 'Hello, World!'
+
+// Sign a message
+const signed = await pgp.sign('My message');
+
+// Verify a signature
+const verification = await pgp.verify(signed);
+console.log(verification.isValid); // true
+```
+
+For full documentation, see [packages/slayops/README.md](packages/slayops/README.md).
+
+### TinyoPGP (for extension development)
+
+The `tinyopgp` library is an internal library used to build the browser extensions. It provides direct communication with `gpgme-json` via Native Messaging. **This library is not intended for direct use in websites** - use `slayops` instead.
 
 ```typescript
 import { init } from 'tinyopgp';
